@@ -35,6 +35,16 @@ public class FarmerHomePage extends JFrame {
         this.farmerUsername = username;
         this.farmerId = getFarmerId(username);
 
+        // Check if farmer ID is valid
+        if (this.farmerId == -1) {
+            JOptionPane.showMessageDialog(null,
+                    "Error: User '" + username + "' not found in database.",
+                    "Authentication Error", JOptionPane.ERROR_MESSAGE);
+            dispose();
+            new LoginScreen();
+            return;
+        }
+
         setTitle("Farm Equipment Rental System - Farmer Dashboard");
         setSize(900, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -71,7 +81,7 @@ public class FarmerHomePage extends JFrame {
 
         // Status bar
         JPanel statusPanel = new JPanel(new BorderLayout());
-        JLabel statusLabel = new JLabel("System Status: Online");
+        JLabel statusLabel = new JLabel("System Status: Online | User ID: " + farmerId);
         statusLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         statusPanel.add(statusLabel, BorderLayout.WEST);
         add(statusPanel, BorderLayout.SOUTH);
@@ -94,7 +104,12 @@ public class FarmerHomePage extends JFrame {
 
                 if (rs.next()) {
                     return rs.getInt("id");
+                } else {
+                    System.err.println("Warning: No user found with username: " + username);
                 }
+
+                rs.close();
+                ps.close();
             } catch (SQLException ex) {
                 JOptionPane.showMessageDialog(this, "Error retrieving farmer ID: " + ex.getMessage(),
                         "Database Error", JOptionPane.ERROR_MESSAGE);
@@ -166,6 +181,14 @@ public class FarmerHomePage extends JFrame {
         categoryFilter.addActionListener(e -> filterEquipment());
 
         rentEquipmentButton.addActionListener(e -> {
+            // Validate farmer ID before proceeding
+            if (farmerId == -1) {
+                JOptionPane.showMessageDialog(this,
+                        "User account not found in the system. Please logout and login again.",
+                        "Authentication Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             int selectedRow = equipmentTable.getSelectedRow();
             if (selectedRow >= 0) {
                 selectedRow = equipmentTable.convertRowIndexToModel(selectedRow);
@@ -219,10 +242,7 @@ public class FarmerHomePage extends JFrame {
                 String status = (String) myRentalsTable.getValueAt(selectedRow, 4);
 
                 if (status.equals("Active")) {
-                    JOptionPane.showMessageDialog(this,
-                            "Feature to return equipment for rental ID " + rentalId +
-                                    " will be implemented in future versions.",
-                            "Feature Coming Soon", JOptionPane.INFORMATION_MESSAGE);
+                    returnEquipment(rentalId);
                 } else {
                     JOptionPane.showMessageDialog(this,
                             "Only active rentals can be returned.",
@@ -232,6 +252,75 @@ public class FarmerHomePage extends JFrame {
                 JOptionPane.showMessageDialog(this, "Please select a rental to return.");
             }
         });
+    }
+
+    private void returnEquipment(int rentalId) {
+        // Implement the equipment return functionality
+        Connection conn = DatabaseConnection.connect();
+        if (conn != null) {
+            try {
+                conn.setAutoCommit(false);
+
+                // Get the equipment ID associated with this rental
+                String getEquipmentQuery = "SELECT equipment_id FROM farmer_rentals WHERE id = ?";
+                PreparedStatement getPs = conn.prepareStatement(getEquipmentQuery);
+                getPs.setInt(1, rentalId);
+                ResultSet rs = getPs.executeQuery();
+
+                if (rs.next()) {
+                    int equipmentId = rs.getInt("equipment_id");
+
+                    // Update rental status
+                    String updateRentalQuery = "UPDATE farmer_rentals SET status = 'Returned' WHERE id = ?";
+                    PreparedStatement rentalPs = conn.prepareStatement(updateRentalQuery);
+                    rentalPs.setInt(1, rentalId);
+                    rentalPs.executeUpdate();
+
+                    // Update equipment availability
+                    String updateEquipmentQuery = "UPDATE farmer_equipment SET is_available = 'Y' WHERE id = ?";
+                    PreparedStatement equipPs = conn.prepareStatement(updateEquipmentQuery);
+                    equipPs.setInt(1, equipmentId);
+                    equipPs.executeUpdate();
+
+                    conn.commit();
+                    JOptionPane.showMessageDialog(this,
+                            "Equipment returned successfully!",
+                            "Return Complete", JOptionPane.INFORMATION_MESSAGE);
+
+                    // Refresh the data displays
+                    loadEquipmentData();
+                    loadMyRentals();
+
+                    rentalPs.close();
+                    equipPs.close();
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                            "Could not find the equipment associated with this rental.",
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                }
+
+                rs.close();
+                getPs.close();
+
+            } catch (SQLException ex) {
+                try {
+                    conn.rollback();
+                } catch (SQLException rollbackEx) {
+                    rollbackEx.printStackTrace();
+                }
+                JOptionPane.showMessageDialog(this,
+                        "Error returning equipment: " + ex.getMessage(),
+                        "Database Error", JOptionPane.ERROR_MESSAGE);
+                ex.printStackTrace();
+            } finally {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }
     }
 
     private void loadEquipmentData() {
@@ -276,6 +365,11 @@ public class FarmerHomePage extends JFrame {
     private void loadMyRentals() {
         // Clear existing data
         myRentalsTableModel.setRowCount(0);
+
+        // Don't try to load rentals if farmer ID is invalid
+        if (farmerId == -1) {
+            return;
+        }
 
         Connection conn = DatabaseConnection.connect();
         if (conn != null) {
@@ -424,8 +518,6 @@ public class FarmerHomePage extends JFrame {
         endDateField.setText(dateFormat.format(cal.getTime()));
         formPanel.add(endDateField, gbc);
 
-        // No purpose field in schema, so removed it
-
         rentalDialog.add(formPanel, BorderLayout.CENTER);
 
         // Button panel
@@ -487,9 +579,35 @@ public class FarmerHomePage extends JFrame {
     }
 
     private boolean submitRentalRequest(int equipmentId, Date startDate, Date endDate) {
+        // Double check that farmer ID is valid
+        if (farmerId == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Error: Your user account is not properly registered in the system.",
+                    "Authentication Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
         Connection conn = DatabaseConnection.connect();
         if (conn != null) {
             try {
+                conn.setAutoCommit(false);  // Start transaction
+
+                // First, verify that the farmer exists in the farmer_users table
+                String checkFarmerQuery = "SELECT COUNT(*) FROM farmer_users WHERE id = ?";
+                PreparedStatement checkFarmerPs = conn.prepareStatement(checkFarmerQuery);
+                checkFarmerPs.setInt(1, farmerId);
+                ResultSet farmerRs = checkFarmerPs.executeQuery();
+
+                if (farmerRs.next() && farmerRs.getInt(1) == 0) {
+                    JOptionPane.showMessageDialog(this,
+                            "Error: Your user ID does not exist in the system. Please contact support.",
+                            "User Not Found", JOptionPane.ERROR_MESSAGE);
+                    return false;
+                }
+
+                farmerRs.close();
+                checkFarmerPs.close();
+
                 // Check if the equipment is still available
                 String checkQuery = "SELECT is_available, rental_rate FROM farmer_equipment WHERE id = ?";
                 PreparedStatement checkPs = conn.prepareStatement(checkQuery);
@@ -526,6 +644,9 @@ public class FarmerHomePage extends JFrame {
                         updatePs.executeUpdate();
                         updatePs.close();
 
+                        // Commit the transaction
+                        conn.commit();
+
                         JOptionPane.showMessageDialog(this,
                                 "Rental request submitted successfully! Your request is pending admin approval.");
                         return true;
@@ -539,11 +660,18 @@ public class FarmerHomePage extends JFrame {
                 rs.close();
                 checkPs.close();
             } catch (SQLException ex) {
+                try {
+                    conn.rollback();  // Rollback on error
+                } catch (SQLException rollbackEx) {
+                    rollbackEx.printStackTrace();
+                }
+
                 JOptionPane.showMessageDialog(this, "Error submitting rental request: " + ex.getMessage(),
                         "Database Error", JOptionPane.ERROR_MESSAGE);
                 ex.printStackTrace();
             } finally {
                 try {
+                    conn.setAutoCommit(true);  // Reset auto-commit
                     conn.close();
                 } catch (SQLException ex) {
                     ex.printStackTrace();
@@ -554,6 +682,9 @@ public class FarmerHomePage extends JFrame {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new FarmerHomePage("farmer1"));
+        // Start the application with the login screen
+        SwingUtilities.invokeLater(() -> {
+            new LoginScreen();
+        });
     }
 }
