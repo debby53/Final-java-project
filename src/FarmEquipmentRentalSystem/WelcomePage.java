@@ -175,9 +175,7 @@ public class WelcomePage extends JFrame {
         setVisible(true);
     }
 
-    /**
-     * Handle resizing of the window
-     */
+
     private void handleResize() {
         int width = getWidth();
 
@@ -221,13 +219,11 @@ public class WelcomePage extends JFrame {
         contentPanel.revalidate();
         contentPanel.repaint();
 
-        // Resize image to fit panel
+
         resizeImage();
     }
 
-    /**
-     * Resizes the image to fit the current panel size
-     */
+
     private void resizeImage() {
         // If we have a placeholder instead of an image, don't resize
         if (imageLabel.getIcon() == null) {

@@ -6,6 +6,10 @@ import java.awt.*;
 import java.sql.*;
 import java.util.regex.*;
 
+/**
+ * Registration Screen for Farm Equipment Rental System
+ * Enhanced with a professional color scheme
+ */
 public class RegistrationScreen extends JFrame {
     // Components
     private JPanel mainPanel;
@@ -33,6 +37,16 @@ public class RegistrationScreen extends JFrame {
     // Dynamic fields based on user type
     private JPanel dynamicFieldsPanel;
 
+    // Colors
+    private static final Color PRIMARY_COLOR = new Color(76, 175, 80);     // Green
+    private static final Color SECONDARY_COLOR = new Color(56, 142, 60);   // Darker Green
+    private static final Color BACKGROUND_COLOR = new Color(240, 248, 255); // Light Blue Background
+    private static final Color TEXT_COLOR = new Color(33, 33, 33);         // Dark Gray
+    private static final Color BUTTON_COLOR = new Color(76, 175, 80);      // Green
+    private static final Color BUTTON_TEXT_COLOR = Color.WHITE;            // White
+    private static final Color FIELD_BACKGROUND = new Color(255, 255, 255); // White
+    private static final Color FIELD_BORDER = new Color(200, 230, 201);    // Light Green
+
     public RegistrationScreen() {
         // Set up the frame
         super("Farm Management System - Registration");
@@ -40,86 +54,148 @@ public class RegistrationScreen extends JFrame {
         setSize(800, 700);
         setLocationRelativeTo(null);
 
+        // Set the background color of the frame
+        getContentPane().setBackground(BACKGROUND_COLOR);
+
         // Initialize panels
         mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        mainPanel.setBackground(BACKGROUND_COLOR);
+
         formPanel = new JPanel(new GridLayout(0, 2, 10, 10));
+        formPanel.setBackground(BACKGROUND_COLOR);
+
         buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        buttonPanel.setBackground(BACKGROUND_COLOR);
+
         dynamicFieldsPanel = new JPanel(new GridLayout(0, 2, 10, 10));
+        dynamicFieldsPanel.setBackground(BACKGROUND_COLOR);
 
         // Initialize components
         titleLabel = new JLabel("Farm Management System Registration", JLabel.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
-        titleLabel.setForeground(new Color(46, 125, 50));
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        titleLabel.setForeground(PRIMARY_COLOR);
 
-        usernameField = new JTextField(20);
-        fullNameField = new JTextField(20);
-        emailField = new JTextField(20);
-        phoneField = new JTextField(20);
-        passwordField = new JPasswordField(20);
-        confirmPasswordField = new JPasswordField(20);
+        // Add a border to title
+        titleLabel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 2, 0, SECONDARY_COLOR),
+                BorderFactory.createEmptyBorder(0, 0, 10, 0)
+        ));
+
+        usernameField = createStyledTextField();
+        fullNameField = createStyledTextField();
+        emailField = createStyledTextField();
+        phoneField = createStyledTextField();
+        passwordField = createStyledPasswordField();
+        confirmPasswordField = createStyledPasswordField();
+
         addressArea = new JTextArea(4, 20);
         addressArea.setLineWrap(true);
         addressArea.setWrapStyleWord(true);
+        addressArea.setBackground(FIELD_BACKGROUND);
+        addressArea.setForeground(TEXT_COLOR);
+        addressArea.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(FIELD_BORDER, 1),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
         JScrollPane addressScrollPane = new JScrollPane(addressArea);
+        addressScrollPane.setBorder(BorderFactory.createLineBorder(FIELD_BORDER, 1));
 
         // User type combo box
         userTypeCombo = new JComboBox<>(new String[]{"select","Farmer", "Admin", "Guesthouse"});
+        userTypeCombo.setBackground(FIELD_BACKGROUND);
+        userTypeCombo.setForeground(TEXT_COLOR);
+        userTypeCombo.setBorder(BorderFactory.createLineBorder(FIELD_BORDER, 1));
         userTypeCombo.addActionListener(e -> updateDynamicFields());
 
         // Gender radio buttons
         maleRadio = new JRadioButton("Male");
         femaleRadio = new JRadioButton("Female");
         otherRadio = new JRadioButton("Other");
+
+        // Style radio buttons
+        styleRadioButton(maleRadio);
+        styleRadioButton(femaleRadio);
+        styleRadioButton(otherRadio);
+
         genderGroup = new ButtonGroup();
         genderGroup.add(maleRadio);
         genderGroup.add(femaleRadio);
         genderGroup.add(otherRadio);
+
         JPanel genderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        genderPanel.setBackground(BACKGROUND_COLOR);
         genderPanel.add(maleRadio);
         genderPanel.add(femaleRadio);
         genderPanel.add(otherRadio);
 
         // Dynamic fields for different user types
-        farmSizeSpinner = new JSpinner(new SpinnerNumberModel(1.0, 0.1, 10000.0, 0.1));
+        farmSizeSpinner = createStyledSpinner(new SpinnerNumberModel(1.0, 0.1, 10000.0, 0.1));
         roleCombo = new JComboBox<>(new String[]{"System Admin", "Manager", "Support"});
-        accessLevelSpinner = new JSpinner(new SpinnerNumberModel(1, 1, 5, 1));
-        houseNameField = new JTextField(20);
-        capacitySpinner = new JSpinner(new SpinnerNumberModel(1, 1, 100, 1));
+        styleComboBox(roleCombo);
+
+        accessLevelSpinner = createStyledSpinner(new SpinnerNumberModel(1, 1, 5, 1));
+        houseNameField = createStyledTextField();
+        capacitySpinner = createStyledSpinner(new SpinnerNumberModel(1, 1, 100, 1));
 
         // Buttons
         registerButton = new JButton("Register");
+        styleButton(registerButton, true);
         registerButton.addActionListener(e -> registerUser());
-        resetButton = new JButton("Reset");
-        resetButton.addActionListener(e -> resetForm());
 
-        // Add components to panels
-        formPanel.add(new JLabel("User Type:"));
+        resetButton = new JButton("Reset");
+        styleButton(resetButton, false);
+        resetButton.addActionListener(e -> resetForm());
+        JButton backToLoginButton = new JButton("Back to Login");
+        styleButton(backToLoginButton, false); // Optional
+
+        backToLoginButton.addActionListener(e -> {
+            dispose(); // Close current window
+             new LoginScreen().setVisible(true); // Uncomment if LoginScreen exists
+        });
+
+
+
+
+        // Style labels and add components to panels
+        formPanel.add(createStyledLabel("User Type:"));
         formPanel.add(userTypeCombo);
-        formPanel.add(new JLabel("Username:"));
+        formPanel.add(createStyledLabel("Username:"));
         formPanel.add(usernameField);
-        formPanel.add(new JLabel("Full Name:"));
+        formPanel.add(createStyledLabel("Full Name:"));
         formPanel.add(fullNameField);
-        formPanel.add(new JLabel("Email:"));
+        formPanel.add(createStyledLabel("Email:"));
         formPanel.add(emailField);
-        formPanel.add(new JLabel("Phone:"));
+        formPanel.add(createStyledLabel("Phone:"));
         formPanel.add(phoneField);
-        formPanel.add(new JLabel("Password:"));
+        formPanel.add(createStyledLabel("Password:"));
         formPanel.add(passwordField);
-        formPanel.add(new JLabel("Confirm Password:"));
+        formPanel.add(createStyledLabel("Confirm Password:"));
         formPanel.add(confirmPasswordField);
-        formPanel.add(new JLabel("Gender:"));
+        formPanel.add(createStyledLabel("Gender:"));
         formPanel.add(genderPanel);
-        formPanel.add(new JLabel("Address:"));
+        formPanel.add(createStyledLabel("Address:"));
         formPanel.add(addressScrollPane);
 
         buttonPanel.add(registerButton);
         buttonPanel.add(resetButton);
+        buttonPanel.add(backToLoginButton);
 
-        mainPanel.add(titleLabel, BorderLayout.NORTH);
+        // Add a header panel with some padding
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(BACKGROUND_COLOR);
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
+        headerPanel.add(titleLabel, BorderLayout.CENTER);
+
+        mainPanel.add(headerPanel, BorderLayout.NORTH);
         mainPanel.add(formPanel, BorderLayout.CENTER);
-        mainPanel.add(dynamicFieldsPanel, BorderLayout.SOUTH);
-        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        // Create a panel for the dynamic fields and buttons
+        JPanel southPanel = new JPanel(new BorderLayout());
+        southPanel.setBackground(BACKGROUND_COLOR);
+        southPanel.add(dynamicFieldsPanel, BorderLayout.CENTER);
+        southPanel.add(buttonPanel, BorderLayout.SOUTH);
+        mainPanel.add(southPanel, BorderLayout.SOUTH);
 
         add(mainPanel);
         updateDynamicFields(); // Initialize dynamic fields
@@ -127,22 +203,143 @@ public class RegistrationScreen extends JFrame {
         setVisible(true);
     }
 
+    // Helper methods for styling components
+    private JLabel createStyledLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setForeground(TEXT_COLOR);
+        label.setFont(new Font("Arial", Font.BOLD, 14));
+        return label;
+    }
+
+    private JTextField createStyledTextField() {
+        JTextField field = new JTextField(20);
+        field.setBackground(FIELD_BACKGROUND);
+        field.setForeground(TEXT_COLOR);
+        field.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(FIELD_BORDER, 1),
+                BorderFactory.createEmptyBorder(8, 10, 8, 10)
+        ));
+        return field;
+    }
+
+    private JPasswordField createStyledPasswordField() {
+        JPasswordField field = new JPasswordField(20);
+        field.setBackground(FIELD_BACKGROUND);
+        field.setForeground(TEXT_COLOR);
+        field.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(FIELD_BORDER, 1),
+                BorderFactory.createEmptyBorder(8, 10, 8, 10)
+        ));
+        return field;
+    }
+
+//    private JSpinner createStyledSpinner(SpinnerModel model) {
+//        JSpinner spinner = new JSpinner(model);
+//        spinner.setBackground(FIELD_BACKGROUND);
+//        spinner.setBorder(BorderFactory.createLineBorder(FIELD_BORDER, 1));
+//
+//        JComponent editor = spinner.getEditor();
+//        if (editor instanceof JSpinner.DefaultEditor) {
+//            JSpinner.DefaultEditor spinnerEditor = (JSpinner.DefaultEditor)editor;
+//            spinnerEditor.getTextField().setBackground(FIELD_BACKGROUND);
+//            spinnerEditor.getTextField().setForeground(TEXT_COLOR);
+//        }
+//
+//        return spinner;
+//    }
+private JSpinner createStyledSpinner(SpinnerModel model) {
+    JSpinner spinner = new JSpinner(model);
+    spinner.setBackground(new Color(240, 244, 248));
+    spinner.setForeground(new Color(51, 51, 51));
+    spinner.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(144, 202, 249), 2),
+            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+    ));
+
+    JComponent editor = spinner.getEditor();
+    if (editor instanceof JSpinner.DefaultEditor) {
+        JSpinner.DefaultEditor spinnerEditor = (JSpinner.DefaultEditor) editor;
+        spinnerEditor.getTextField().setBackground(new Color(240, 244, 248));
+        spinnerEditor.getTextField().setForeground(new Color(51, 51, 51));
+        spinnerEditor.getTextField().setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+    }
+
+    return spinner;
+}
+
+
+//    private void styleComboBox(JComboBox<String> comboBox) {
+//        comboBox.setBackground(FIELD_BACKGROUND);
+//        comboBox.setForeground(TEXT_COLOR);
+//        comboBox.setBorder(BorderFactory.createLineBorder(FIELD_BORDER, 1));
+//    }
+private void styleComboBox(JComboBox<String> comboBox) {
+    comboBox.setBackground(new Color(240, 244, 248));
+    comboBox.setForeground(new Color(51, 51, 51));
+    comboBox.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(144, 202, 249), 2),
+            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+    ));
+}
+
+
+    private void styleRadioButton(JRadioButton radio) {
+        radio.setBackground(BACKGROUND_COLOR);
+        radio.setForeground(TEXT_COLOR);
+        radio.setFocusPainted(false);
+        radio.setFont(new Font("Arial", Font.PLAIN, 14));
+    }
+
+    private void styleButton(JButton button, boolean isPrimary) {
+        if (isPrimary) {
+            button.setBackground(BUTTON_COLOR);
+            button.setForeground(BUTTON_TEXT_COLOR);
+        } else {
+            button.setBackground(Color.LIGHT_GRAY);
+            button.setForeground(TEXT_COLOR);
+        }
+
+        button.setFont(new Font("Arial", Font.BOLD, 14));
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setPreferredSize(new Dimension(120, 40));
+
+        // Add hover effect
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                if (isPrimary) {
+                    button.setBackground(SECONDARY_COLOR);
+                } else {
+                    button.setBackground(new Color(220, 220, 220));
+                }
+            }
+
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                if (isPrimary) {
+                    button.setBackground(BUTTON_COLOR);
+                } else {
+                    button.setBackground(Color.LIGHT_GRAY);
+                }
+            }
+        });
+    }
+
     private void updateDynamicFields() {
         dynamicFieldsPanel.removeAll();
         String userType = (String) userTypeCombo.getSelectedItem();
 
         if ("Farmer".equals(userType)) {
-            dynamicFieldsPanel.add(new JLabel("Farm Size (acres):"));
+            dynamicFieldsPanel.add(createStyledLabel("Farm Size (acres):"));
             dynamicFieldsPanel.add(farmSizeSpinner);
         } else if ("Admin".equals(userType)) {
-            dynamicFieldsPanel.add(new JLabel("Role:"));
+            dynamicFieldsPanel.add(createStyledLabel("Role:"));
             dynamicFieldsPanel.add(roleCombo);
-            dynamicFieldsPanel.add(new JLabel("Access Level:"));
+            dynamicFieldsPanel.add(createStyledLabel("Access Level:"));
             dynamicFieldsPanel.add(accessLevelSpinner);
         } else if ("Guesthouse".equals(userType)) {
-            dynamicFieldsPanel.add(new JLabel("House Name:"));
+            dynamicFieldsPanel.add(createStyledLabel("House Name:"));
             dynamicFieldsPanel.add(houseNameField);
-            dynamicFieldsPanel.add(new JLabel("Capacity:"));
+            dynamicFieldsPanel.add(createStyledLabel("Capacity:"));
             dynamicFieldsPanel.add(capacitySpinner);
         }
 
@@ -314,16 +511,32 @@ public class RegistrationScreen extends JFrame {
         }
 
         // Phone validation (optional)
-        if (!phoneField.getText().trim().isEmpty()) {
-            String phoneRegex = "^[0-9+()-]{6,20}$";
-            if (!Pattern.compile(phoneRegex).matcher(phoneField.getText()).matches()) {
-                showError("Please enter a valid phone number");
-                return false;
-            }
+//        if (!phoneField.getText().trim().isEmpty()) {
+//            String phoneRegex = "^[0-9+()-]{6,20}$";
+//            if (!Pattern.compile(phoneRegex).matcher(phoneField.getText()).matches()) {
+//                showError("Please enter a valid phone number");
+//                return false;
+//            }
+//        }
+
+        String phoneNumber = phoneField.getText().trim(); // Get user input
+
+        if (phoneNumber.matches("^07\\d{8}$")) {
+            // Valid phone number
+        } else {
+            JOptionPane.showMessageDialog(null,
+                    "Phone number must start with 07 and be exactly 10 digits.",
+                    "Invalid Phone Number", JOptionPane.ERROR_MESSAGE);
         }
+
 
         // User type specific validations
         String userType = (String) userTypeCombo.getSelectedItem();
+
+        if ("select".equals(userType)) {
+            showError("Please select a user type");
+            return false;
+        }
 
         if ("Guesthouse".equals(userType) && houseNameField.getText().trim().isEmpty()) {
             showError("House name cannot be empty for Guesthouse registration");

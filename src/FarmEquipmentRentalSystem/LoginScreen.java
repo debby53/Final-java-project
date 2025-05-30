@@ -332,12 +332,12 @@ public class LoginScreen extends JFrame {
         // Buttons
         loginButton = new JButton("Login");
         loginButton.setBackground(new Color(76, 175, 80));
-        loginButton.setForeground(Color.WHITE);
+        loginButton.setForeground(Color.green);
         loginButton.setFont(new Font("Arial", Font.BOLD, 14));
-        loginButton.setFocusPainted(false);
+        loginButton.setFocusPainted(true);
 
         registerButton = new JButton("Register");
-        registerButton.setBackground(new Color(200, 200, 200));
+        registerButton.setBackground(new Color(33, 118, 108));
         registerButton.setForeground(Color.BLACK);
         registerButton.setFont(new Font("Arial", Font.BOLD, 14));
         registerButton.setFocusPainted(false);
@@ -471,7 +471,13 @@ public class LoginScreen extends JFrame {
         loginButton.setForeground(Color.WHITE);
         loginButton.setFont(new Font("Arial", Font.BOLD, 14));
         loginButton.setFocusPainted(false);
+        loginButton.setBorderPainted(false);               // Remove border effect
+        loginButton.setContentAreaFilled(true);            // Ensure background is always filled
+        loginButton.setOpaque(true);
         loginButton.setPreferredSize(new Dimension(100, 35));
+        loginButton.addMouseListener(new MouseAdapter() {});
+        loginButton.setRolloverEnabled(false);
+
 
         registerButton = new JButton("Register");
         registerButton.setBackground(new Color(200, 200, 200));
